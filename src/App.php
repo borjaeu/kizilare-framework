@@ -2,13 +2,7 @@
 /**
  * @author Borja Morales.
  */
-
 namespace Kizilare\Framework;
-ini_set('display_errors', true);
-error_reporting(E_ALL);
-
-set_error_handler ( array( 'ErrorHandler', 'error' ) );
-App::getInstance()->run();
 
 class App
 {
@@ -20,13 +14,6 @@ class App
 	static protected $instance;
 
 	/**
-	 * Configuration file.
-	 *
-	 * @var string
-	 */
-	const CONFIG_FILE = 'config.php';
-
-	/**
 	 * Application configuration.
 	 *
 	 * @var array
@@ -36,15 +23,8 @@ class App
 	/**
 	 * Restricted constructor.
 	 */
-	protected function __construct()
+	protected function __construct( $configuration )
 	{
-		$config = array();
-		if ( is_file( self::CONFIG_FILE ) )
-		{
-			include self::CONFIG_FILE;
-		}
-		$this->config = $config;
-		$this->config['base'] = str_replace( 'app.php', '', $_SERVER['SCRIPT_NAME'] );
 	}
 
 	/**
@@ -52,11 +32,11 @@ class App
 	 *
 	 * @return App
 	 */
-	static public function getInstance()
+	static public function getInstance( $configuration = array() )
 	{
 		if ( empty( self::$instance ) )
 		{
-			self::$instance = new App();
+			self::$instance = new App( $configuration );
 		}
 		return self::$instance;
 	}
@@ -64,14 +44,16 @@ class App
 	/**
 	 * Executes application.
 	 */
-	public function run()
+	public function run( array $configuration )
 	{
+		$this->config = $configuration;
+		$this->config['base'] = str_replace( 'app.php', '', $_SERVER['SCRIPT_NAME'] );
 		try
 		{
 			$request = $this->getRequest();
 			if ( empty( $this->config['routes'] ) )
 			{
-				throw new \Exception404("No routes", 1);
+				throw new Exception404("No routes", 1);
 			}
 			else
 			{
