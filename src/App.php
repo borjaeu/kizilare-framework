@@ -21,10 +21,27 @@ class App
     protected $config;
 
     /**
+     * Pretty urls used.
+     *
+     * @var boolean
+     */
+    protected $pretty_urls = true;
+
+    /**
      * Restricted constructor.
      */
     protected function __construct( $configuration )
     {
+    }
+
+    /**
+     * Sets the pretty urls value.
+     *
+     * @param boolean $pretty_urls
+     */
+    public function setPrettyUrls( $pretty_urls )
+    {
+        $this->pretty_urls = $pretty_urls;
     }
 
     /**
@@ -136,7 +153,13 @@ class App
     {
         if (empty( $_GET['queried_url'] )) {
             if (false === strstr( $_SERVER['REQUEST_URI'], $_SERVER['PHP_SELF'] )) {
-                return '/';
+                if( $this->pretty_urls ){
+                    return '/';
+                } else {
+                    $new_url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'] . '/';
+                    header( "Location: $new_url" );
+                    exit;
+                }
             }
             return str_replace( $_SERVER['SCRIPT_NAME'], '', $_SERVER['PHP_SELF'] );
         }
