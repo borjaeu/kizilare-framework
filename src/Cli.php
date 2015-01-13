@@ -16,7 +16,7 @@ class App
     /**
      * Application configuration.
      *
-     * @var Config
+     * @var array
      */
     protected $config;
 
@@ -26,13 +26,6 @@ class App
      * @var boolean
      */
     protected $pretty_urls = true;
-
-    /**
-     * Routes.
-     *
-     * @var array
-     */
-    protected $routes;
 
     /**
      * Restricted constructor.
@@ -68,14 +61,13 @@ class App
     /**
      * Executes application.
      */
-    public function run( Config $configuration )
+    public function run( array $configuration )
     {
         $this->config = $configuration;
-        $this->config->set( 'base', str_replace( 'app.php', '', $_SERVER['SCRIPT_NAME'] ) );
+        $this->config['base'] = str_replace( 'app.php', '', $_SERVER['SCRIPT_NAME'] );
         try {
-            $this->routes = $this->config->get( 'routes' );
             $request = $this->getRequest();
-            if (empty( $this->routes )) {
+            if (empty( $this->config['routes'] )) {
                 throw new Exception404( "No routes", 1 );
             } else {
                 list( $controller_name, $action_name, $parameters ) = $this->findRoute( $request );
@@ -97,7 +89,7 @@ class App
      */
     protected function findRoute( array $request )
     {
-        foreach ($this->routes as $pattern => $action) {
+        foreach ($this->config['routes'] as $pattern => $action) {
             $pattern = '/^' . $pattern . '$/';
             $request_id = $request['method'] . ' ' . $request['path'];
             if (preg_match( $pattern, $request_id, $parameters )) {
@@ -136,7 +128,7 @@ class App
      */
     public function getConfig( $item )
     {
-        return $this->config->get( $item );
+        return isset( $this->config[$item] ) ? $this->config[$item] : null;
     }
 
     /**
@@ -146,10 +138,19 @@ class App
      */
     protected function getRequest()
     {
-        return array(
-            'method' => empty( $_SERVER['REQUEST_METHOD'] ) ? 'GET' : $_SERVER['REQUEST_METHOD'],
-            'path'   => $this->getPath()
-        );
+        if ( php_sapi_name() == 'cli' ) {
+            print_r( $argc );
+            print_r( $argv );
+            return array(
+                'method' => 'CLI',
+                'path'   => $args
+            );
+        } else {
+            return array(
+                'method' => empty( $_SERVER['REQUEST_METHOD'] ) ? 'GET' : $_SERVER['REQUEST_METHOD'],
+                'path'   => $this->getPath()
+            );
+        }
     }
 
     /**
