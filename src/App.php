@@ -162,7 +162,7 @@ class App
         if (empty( $_GET['queried_url'] )) {
             if (false === strstr( $_SERVER['REQUEST_URI'], $_SERVER['PHP_SELF'] )) {
                 if( $this->pretty_urls ){
-                    return '/';
+                    return isset($_SERVER['REDIRECT_URL']) ? $_SERVER['REDIRECT_URL'] : '/';
                 } else {
                     $new_url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'] . '/';
                     header( "Location: $new_url" );
