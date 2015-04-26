@@ -28,16 +28,9 @@ class App
     protected $pretty_urls = true;
 
     /**
-     * Routes.
-     *
-     * @var array
-     */
-    protected $routes;
-
-    /**
      * Restricted constructor.
      */
-    protected function __construct( $configuration )
+    protected function __construct()
     {
     }
 
@@ -67,18 +60,19 @@ class App
 
     /**
      * Executes application.
+     *
+     * @param Config $configuration
      */
-    public function run( Config $configuration )
+    public function run(Config $configuration)
     {
         $this->config = $configuration;
-        $this->config->set( 'base', str_replace( 'app.php', '', $_SERVER['SCRIPT_NAME'] ) );
+        $this->config->set('base', str_replace('app.php', '', $_SERVER['SCRIPT_NAME']));
         try {
-            $this->routes = $this->config->get( 'routes' );
             $request = $this->getRequest();
-            if (empty( $this->routes )) {
+            if (!$this->config->get('routes')) {
                 throw new Exception404( "No routes", 1 );
             } else {
-                list( $controller_name, $action_name, $parameters ) = $this->findRoute( $request );
+                list($controller_name, $action_name, $parameters) = $this->findRoute($request);
             }
 
             $controller = new $controller_name();
@@ -91,20 +85,20 @@ class App
     /**
      * Finds the route for the current path.
      *
-     * @param array $request Request information.
+     * @param string $request_id Request information.
      * @return array
      * @throws Exception404
      */
-    protected function findRoute( array $request )
+    protected function findRoute($request_id)
     {
-        foreach ($this->routes as $pattern => $action) {
+        $routes = $this->config->get('routes');
+        foreach ($routes as $pattern => $action) {
             $pattern = '/^' . $pattern . '$/';
-            $request_id = $request['method'] . ' ' . $request['path'];
             if (preg_match( $pattern, $request_id, $parameters )) {
                 $chunks = explode( '::', $action );
                 $controller_name = $chunks[0];
-                $action_name = isset( $chunks[1] ) ? $chunks[1] : 'index';
-                return array( $controller_name, $action_name, $this->cleanParameters( $parameters ) );
+                $action_name = isset($chunks[1]) ? $chunks[1] : 'index';
+                return array($controller_name, $action_name, $this->cleanParameters($parameters));
             }
         }
         throw new Exception404( "Invalid request '$request_id'" );
@@ -128,28 +122,19 @@ class App
     }
 
     /**
-     * Gets configuration.
-     *
-     * @param string $item Item to get from config.
-     *
-     * @return mixed
-     */
-    public function getConfig( $item )
-    {
-        return $this->config->get( $item );
-    }
-
-    /**
      * Get queried url.
      *
      * @return array
      */
     protected function getRequest()
     {
-        return array(
-            'method' => empty( $_SERVER['REQUEST_METHOD'] ) ? 'GET' : $_SERVER['REQUEST_METHOD'],
-            'path'   => $this->getPath()
-        );
+        global $argc, $argv, $args;
+
+        if (php_sapi_name() == 'cli') {
+            return trim('CLI ' . (isset($argv[1]) ? $argv[1] : ''));
+        } else {
+            return (empty($_SERVER['REQUEST_METHOD']) ? 'GET' : $_SERVER['REQUEST_METHOD']) . ' ' . $this->getPath();
+        }
     }
 
     /**
@@ -162,7 +147,7 @@ class App
         if (empty( $_GET['queried_url'] )) {
             if (false === strstr( $_SERVER['REQUEST_URI'], $_SERVER['PHP_SELF'] )) {
                 if( $this->pretty_urls ){
-                    return isset($_SERVER['REDIRECT_URL']) ? $_SERVER['REDIRECT_URL'] : '/';
+                    return '/';
                 } else {
                     $new_url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'] . '/';
                     header( "Location: $new_url" );

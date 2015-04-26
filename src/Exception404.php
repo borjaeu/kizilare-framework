@@ -40,7 +40,7 @@ ERROR;
      */
     protected function simpleCrypt( $text, $cols = 100 )
     {
-        $debug = App::getInstance()->getConfig('debug');
+        $debug = Config::getInstance()->get('debug');
         if ( $debug )
         {
             return $text;
